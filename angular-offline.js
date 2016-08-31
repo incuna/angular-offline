@@ -42,8 +42,8 @@ angular
     return this;
   };
 
-  this.$get = ['$q', '$window', '$log', 'connectionStatus', '$cacheFactory',
-  function ($q, $window, $log, connectionStatus, $cacheFactory) {
+  this.$get = ['$q', '$rootScope', '$window', '$log', 'connectionStatus', '$cacheFactory',
+  function ($q, $rootScope, $window, $log, connectionStatus, $cacheFactory) {
     var offline = {
       ERRORS: {
         EMPTY_STACK: 'empty stack',
@@ -171,9 +171,11 @@ angular
       return $requester(request)
         .then(function (response) {
           log('request success', response);
+          $rootScope.$broadcast('offline-request:success', response, request);
           return response;
         }, function (error) {
           log('request error', error);
+          $rootScope.$broadcast('offline-request:error', error, request);
           return $q.reject(error);
         });
     }
