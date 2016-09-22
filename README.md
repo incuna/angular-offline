@@ -47,7 +47,7 @@ module.config(function (offlineProvider) {
 });
 ```
 
-### offlineProvider.debug(value)
+### offlineProvider.alwaysRefresh(value)
 
 Enable or disable always refreshing. When this is `true`, the cache is always refreshed for GET request when online. This enables you to set a very long cache `maxAge`, but still always update the cache when online. Without this, long cache lifetime requests will always be served from the cache, even when online.
 
