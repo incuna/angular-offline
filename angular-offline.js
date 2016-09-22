@@ -253,7 +253,7 @@ angular
         // For GET method, Angular will handle it.
         if (config.method === 'GET') {
           // Online we clean the cache.
-          if (connectionStatus.isOnline())
+          if (connectionStatus.isOnline()) {
             clean(config.cache, config.url);
           }
 
