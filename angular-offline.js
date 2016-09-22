@@ -42,9 +42,14 @@ angular
     return this;
   };
 
-  this.$get = ['$q', '$window', '$log', 'connectionStatus', '$cacheFactory',
-  function ($q, $window, $log, connectionStatus, $cacheFactory) {
-    var offline = {};
+  this.$get = ['$q', '$rootScope', '$window', '$log', 'connectionStatus', '$cacheFactory',
+  function ($q, $rootScope, $window, $log, connectionStatus, $cacheFactory) {
+    var offline = {
+      ERRORS: {
+        EMPTY_STACK: 'empty stack',
+        REQUEST_QUEUED: 'request queued'
+      }
+    };
     var defaultStackCache = $cacheFactory('offline-request-stack');
 
     /**
@@ -159,16 +164,18 @@ angular
       var request = stackShift();
 
       if (!request)
-        return $q.reject(new Error('empty stack'));
+        return $q.reject(new Error(offline.ERRORS.EMPTY_STACK));
 
       log('will process request', request);
 
       return $requester(request)
         .then(function (response) {
           log('request success', response);
+          $rootScope.$broadcast('offline-request:success', response, request);
           return response;
         }, function (error) {
           log('request error', error);
+          $rootScope.$broadcast('offline-request:error', error, request);
           return $q.reject(error);
         });
     }
@@ -186,12 +193,12 @@ angular
       return processNextRequest()
       .then(offline.processStack)
       .catch(function (error) {
-        if (error && error.message === 'empty stack') {
+        if (error && error.message === offline.ERRORS.EMPTY_STACK) {
           log('all requests completed');
           return;
         }
 
-        if (error && error.message === 'request queued') {
+        if (error && error.message === offline.ERRORS.REQUEST_QUEUED) {
           log('request has been queued, stop');
           return;
         }
@@ -240,7 +247,7 @@ angular
         // For other methods in offline mode, we will put them in wait.
         if (!connectionStatus.isOnline()) {
           storeRequest(config);
-          return $q.reject(new Error('request queued'));
+          return $q.reject(new Error(offline.ERRORS.REQUEST_QUEUED));
         }
 
         return config;
