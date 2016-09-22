@@ -2,9 +2,9 @@
 
 # This plugin is no longer actively maintained, you can still use it but issues will not be resolved. If you want the npm name, you can contact me by email.
 
-[![Build Status](https://travis-ci.org/neoziro/angular-offline.svg?branch=master)](https://travis-ci.org/neoziro/angular-offline)
-[![Dependency Status](https://david-dm.org/neoziro/angular-offline.svg?theme=shields.io)](https://david-dm.org/neoziro/angular-offline)
-[![devDependency Status](https://david-dm.org/neoziro/angular-offline/dev-status.svg?theme=shields.io)](https://david-dm.org/neoziro/angular-offline#info=devDependencies)
+[![Build Status](https://travis-ci.org/incuna/angular-offline.svg?branch=master)](https://travis-ci.org/incuna/angular-offline)
+[![Dependency Status](https://david-dm.org/incuna/angular-offline.svg?theme=shields.io)](https://david-dm.org/incuna/angular-offline)
+[![devDependency Status](https://david-dm.org/incuna/angular-offline/dev-status.svg?theme=shields.io)](https://david-dm.org/incuna/angular-offline#info=devDependencies)
 
 Offline support for AngularJS applications.
 
@@ -44,6 +44,16 @@ Start or stop debug mode. It adds a lot of additional logs to understand how off
 ```js
 module.config(function (offlineProvider) {
   offlineProvider.debug(true);
+});
+```
+
+### offlineProvider.debug(value)
+
+Enable or disable always refreshing. When this is `true`, the cache is always refreshed for GET request when online. This enables you to set a very long cache `maxAge`, but still always update the cache when online. Without this, long cache lifetime requests will always be served from the cache, even when online.
+
+```js
+module.config(function (offlineProvider) {
+  offlineProvider.alwaysRefresh(true);
 });
 ```
 

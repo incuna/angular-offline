@@ -42,6 +42,19 @@ angular
     return this;
   };
 
+
+  /**
+   * Enable or disable always refreshing when online
+   *
+   * @param {boolean} value
+   * @returns {offlineProvider}
+   */
+
+  offlineProvider.alwaysRefresh = function (value) {
+    this._alwaysRefresh = value;
+    return this;
+  };
+
   this.$get = ['$q', '$rootScope', '$window', '$log', 'connectionStatus', '$cacheFactory',
   function ($q, $rootScope, $window, $log, connectionStatus, $cacheFactory) {
     var offline = {
@@ -63,6 +76,21 @@ angular
         return;
 
       return $log.debug.apply($log, ['%cOffline', 'font-weight: bold'].concat([].slice.call(arguments)));
+    }
+
+    /**
+     * Clean cache key
+     *
+     * @param {object} cache Cache
+     * @param {string} key Cache key
+     */
+
+    function clean(cache, key) {
+      if (cache === true)
+        cache = $requester.defaults.cache || $cacheFactory.get('$http');
+      var info = cache.info(key);
+      if (info)
+        cache.remove(key);
     }
 
     /**
@@ -239,7 +267,11 @@ angular
         if (config.method === 'GET') {
           // Online we clean the cache.
           if (connectionStatus.isOnline())
-            cleanIfExpired(config.cache, config.url);
+            if (offlineProvider._alwaysRefresh) {
+              clean(config.cache, config.url);
+            } else {
+              cleanIfExpired(config.cache, config.url);
+            }
 
           return config;
         }
