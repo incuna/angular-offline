@@ -89,23 +89,10 @@ angular
       if (cache === true)
         cache = $requester.defaults.cache || $cacheFactory.get('$http');
       var info = cache.info(key);
-      if (info)
-        cache.remove(key);
-    }
 
-    /**
-     * Clean cache if expired.
-     *
-     * @param {object} cache Cache
-     * @param {string} key Cache key
-     */
-
-    function cleanIfExpired(cache, key) {
-      if (cache === true)
-        cache = $requester.defaults.cache || $cacheFactory.get('$http');
-      var info = cache.info(key);
-      if (info && info.isExpired)
+      if (offlineProvider._alwaysRefresh || (info && info.isExpired)) {
         cache.remove(key);
+      }
     }
 
     /**
@@ -267,11 +254,8 @@ angular
         if (config.method === 'GET') {
           // Online we clean the cache.
           if (connectionStatus.isOnline())
-            if (offlineProvider._alwaysRefresh) {
-              clean(config.cache, config.url);
-            } else {
-              cleanIfExpired(config.cache, config.url);
-            }
+            clean(config.cache, config.url);
+          }
 
           return config;
         }
