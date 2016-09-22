@@ -2,4 +2,5 @@
 
 This project uses Semantic Versioning (2.0).
 
-# upcoming
+# Upcoming
+* Bugfix: Dry out error message strings
