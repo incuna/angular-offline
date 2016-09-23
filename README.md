@@ -59,7 +59,7 @@ module.config(function (offlineProvider) {
 
 ### offlineProvider.alwaysOnline(value)
 
-Enable or disable applying offline functionality to all requests. When this is false, requests will only be offlined by explicitly adding the `offline: false` property to the request config. If you want to enable offline functionality for the majority or all of the reqeusts in the application, adding the offline flag to every request is not ideal. Setting `alwaysOnline` to `true`, means that offline functionality will be applied to every request, except those that explciitly set `offline: false` in their individual request configurations, or caches that are excluded (see excludeCacheIds).
+Enable or disable applying offline functionality to all requests. When this is false, requests will only be offlined by explicitly adding the `offline: false` property to the request config. If you want to enable offline functionality for the majority or all of the requests in the application, adding the offline flag to every request is not ideal. Setting `alwaysOnline` to `true`, means that offline functionality will be applied to every request, except those that explicitly set `offline: false` in their individual request configurations, or caches that are excluded (see excludeCacheIds).
 
 ```js
 module.config(function (offlineProvider) {
