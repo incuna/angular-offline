@@ -212,6 +212,61 @@ describe('Angular offline', function () {
 
         $httpBackend.flush(1);
       });
+
+      it('should not clean unexpired caches if we are online', function (done) {
+        startOffline();
+
+        var hasRemoved = false;
+
+        $http.get('/test', {
+          offline: true,
+          cache: {
+            get: function (key) {
+              return this[key];
+            },
+            info: function () {
+              return {isExpired: false};
+            },
+            put: function (key, value) {
+              this[key] = value;
+            },
+            remove: function (key) {
+              hasRemoved = true;
+            }
+          }
+        });
+
+        $httpBackend.flush(1);
+        expect(hasRemoved).to.equal(false);
+        done();
+      });
+
+      it('should clean all caches if we are online and using alwaysRefresh setting', function (done) {
+        offlineProvider.alwaysRefresh(true);
+        startOffline();
+
+        $http.get('/test', {
+          offline: true,
+          cache: {
+            get: function (key) {
+              return this[key];
+            },
+            info: function () {
+              return {isExpired: false};
+            },
+            put: function (key, value) {
+              this[key] = value;
+            },
+            remove: function (key) {
+              expect(key).to.equal('/test');
+              done();
+            }
+          }
+        });
+
+        $httpBackend.flush(1);
+      });
+
     });
   });
 
