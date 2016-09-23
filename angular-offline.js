@@ -67,9 +67,9 @@ angular
   };
 
   /**
-   * Enable or disable always refreshing when online
+   * Provide a blacklist of cache keys to exclude from offline
    *
-   * @param {array} value
+   * @param {array} cacheList
    * @returns {offlineProvider}
    */
 
