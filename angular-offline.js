@@ -42,7 +42,6 @@ angular
     return this;
   };
 
-
   /**
    * Enable or disable always refreshing when online
    *
@@ -52,6 +51,30 @@ angular
 
   offlineProvider.alwaysRefresh = function (value) {
     this._alwaysRefresh = value;
+    return this;
+  };
+
+  /**
+   * Enable or disable always using offline
+   *
+   * @param {boolean} value
+   * @returns {offlineProvider}
+   */
+
+  offlineProvider.alwaysOffline = function (value) {
+    this._alwaysOffline = value;
+    return this;
+  };
+
+  /**
+   * Provide a blacklist of cache keys to exclude from offline
+   *
+   * @param {array} cacheList
+   * @returns {offlineProvider}
+   */
+
+  offlineProvider.excludeCacheIds = function (cacheList) {
+    this._excludeCacheIds = cacheList;
     return this;
   };
 
@@ -79,6 +102,19 @@ angular
     }
 
     /**
+     * Return cache/default cache
+     *
+     * @param {object} cache Cache
+     * @returns {object} Cache
+     */
+
+    function getCache (cache) {
+      if (cache === true)
+        cache = $requester.defaults.cache || $cacheFactory.get('$http');
+      return cache;
+    }
+
+    /**
      * Clean cache key
      *
      * @param {object} cache Cache
@@ -86,8 +122,7 @@ angular
      */
 
     function clean(cache, key) {
-      if (cache === true)
-        cache = $requester.defaults.cache || $cacheFactory.get('$http');
+      cache = getCache(cache);
       var info = cache.info(key);
 
       if (offlineProvider._alwaysRefresh || (info && info.isExpired)) {
@@ -240,15 +275,36 @@ angular
 
     offline.interceptors = {
       request: function (config) {
-        // If there is not offline options, do nothing.
-        if (!config.offline)
+
+        // If the request is explicitly marked as not offline, do nothing
+        if (config.offline === false) {
           return config;
+        }
+
+        if (config.offline !== true) {
+          // config is neither true or false, so we need to check if always offline is set
+          if (!offlineProvider._alwaysOffline) {
+            // neither config or always offline indicate we should offline this
+            //  request, so we do nothing
+            return config;
+          }
+        }
 
         log('intercept request', config);
 
         // Automatically set cache to true.
         if (!config.cache)
           config.cache = true;
+
+        var cache = getCache(config.cache);
+        var cacheInfo = cache.info();
+        var cacheKey = cacheInfo.id;
+        if (cacheKey && offlineProvider._excludeCacheIds) {
+          if (offlineProvider._excludeCacheIds.indexOf(cacheKey) !== -1) {
+            // the cache is in the exclude list, so do nothing
+            return config;
+          }
+        }
 
         // For GET method, Angular will handle it.
         if (config.method === 'GET') {

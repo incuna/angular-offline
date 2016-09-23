@@ -4,7 +4,8 @@ describe('Angular offline', function () {
   var $http, $rootScope, $httpBackend, $cacheFactory, offline, startOffline, connectionStatus;
 
   beforeEach(module('offline', function (offlineProvider, $provide) {
-    offlineProvider.debug(true);
+    this.offlineProvider = offlineProvider;
+    this.offlineProvider.debug(true);
     $provide.value('connectionStatus', {
       isOnline: function () {
         return this.online;
@@ -26,6 +27,21 @@ describe('Angular offline', function () {
     startOffline = function () {
       offline.start($http);
     };
+
+    this.mockCache = {
+      get: function (key) {
+        return this[key];
+      },
+      info: function () {
+        return {
+          id: 'test'
+        };
+      },
+      put: function (key, value) {
+      },
+      remove: function (key) {
+      }
+    }
   }));
 
   afterEach(function() {
@@ -35,7 +51,33 @@ describe('Angular offline', function () {
 
   describe('GET request', function () {
     describe('with offline config', function () {
-      it('should cache request', function () {
+      it('should not cache request when no offline flag', function () {
+        startOffline();
+
+        $http.get('/test');
+
+        $http.get('/test');
+
+        // We expect two request to be flushed, as there should be no caching
+        $httpBackend.flush(2);
+      });
+
+      it('should not cache request when offline flag is false', function () {
+        startOffline();
+
+        $http.get('/test', {
+          offline: false
+        });
+
+        $http.get('/test', {
+          offline: false
+        });
+
+        // We expect two request to be flushed, as there should be no caching
+        $httpBackend.flush(2);
+      });
+
+      it('should cache request when using offline flag', function () {
         startOffline();
 
         $http.get('/test', {
@@ -51,36 +93,180 @@ describe('Angular offline', function () {
         $httpBackend.flush(1);
       });
 
-      describe('online', function () {
-        beforeEach(function () {
-          connectionStatus.online = true;
-        });
+      it('should cache request when using alwaysOffline setting and no offline flag', function () {
+        offlineProvider.alwaysOffline(true);
+        startOffline();
 
-        it('should clean the expired cache if we are online', function (done) {
-          startOffline();
+        $http.get('/test');
 
-          $http.get('/test', {
-            offline: true,
-            cache: {
-              get: function (key) {
-                return this[key];
-              },
-              info: function () {
-                return {isExpired: true};
-              },
-              put: function (key, value) {
-                this[key] = value;
-              },
-              remove: function (key) {
-                expect(key).to.equal('/test');
-                done();
-              }
-            }
-          });
+        $http.get('/test');
 
-          $httpBackend.flush(1);
-        });
+        // We flush only one request, if cache didn't work
+        // we had to flush two.
+        $httpBackend.flush(1);
       });
+
+      it('should cache request when using alwaysOffline setting and explicit offline true', function () {
+        offlineProvider.alwaysOffline(true);
+        startOffline();
+
+        $http.get('/test', {
+          offline: true
+        });
+
+        $http.get('/test', {
+          offline: true
+        });
+
+        // We expect two request to be flushed, as there should be no caching
+        $httpBackend.flush(1);
+      });
+
+      it('should not cache request when using alwaysOffline setting and explicit offline false', function () {
+        offlineProvider.alwaysOffline(true);
+        startOffline();
+
+        $http.get('/test', {
+          offline: false
+        });
+
+        $http.get('/test', {
+          offline: false
+        });
+
+        // We expect two request to be flushed, as there should be no caching
+        $httpBackend.flush(2);
+      });
+
+    });
+
+    describe('with excludeCacheIDs', function () {
+
+      it('should not cache request when using alwaysOffline setting and excluding specific cache id', function () {
+        offlineProvider.alwaysOffline(true);
+        offlineProvider.excludeCacheIds([
+          'test'
+        ]);
+        startOffline();
+
+        $http.get('/test', {
+          cache: this.mockCache
+        });
+
+        $http.get('/test', {
+          cache: this.mockCache
+        });
+
+        // We expect two request to be flushed, as there should be no caching
+        $httpBackend.flush(2);
+      });
+
+      it('should not cache request when using using offline flag and excluding specific cache id', function () {
+        offlineProvider.excludeCacheIds([
+          'test'
+        ]);
+        startOffline();
+
+        $http.get('/test', {
+          offline: true,
+          cache: this.mockCache
+        });
+
+        $http.get('/test', {
+          offline: true,
+          cache: this.mockCache
+        });
+
+        // We expect two request to be flushed, as there should be no caching
+        $httpBackend.flush(2);
+      });
+
+    });
+
+    describe('online', function () {
+      beforeEach(function () {
+        connectionStatus.online = true;
+      });
+
+      it('should clean the expired cache if we are online', function (done) {
+        startOffline();
+
+        $http.get('/test', {
+          offline: true,
+          cache: {
+            get: function (key) {
+              return this[key];
+            },
+            info: function () {
+              return {isExpired: true};
+            },
+            put: function (key, value) {
+              this[key] = value;
+            },
+            remove: function (key) {
+              expect(key).to.equal('/test');
+              done();
+            }
+          }
+        });
+
+        $httpBackend.flush(1);
+      });
+
+      it('should not clean unexpired caches if we are online', function (done) {
+        startOffline();
+
+        var hasRemoved = false;
+
+        $http.get('/test', {
+          offline: true,
+          cache: {
+            get: function (key) {
+              return this[key];
+            },
+            info: function () {
+              return {isExpired: false};
+            },
+            put: function (key, value) {
+              this[key] = value;
+            },
+            remove: function (key) {
+              hasRemoved = true;
+            }
+          }
+        });
+
+        $httpBackend.flush(1);
+        expect(hasRemoved).to.equal(false);
+        done();
+      });
+
+      it('should clean all caches if we are online and using alwaysRefresh setting', function (done) {
+        offlineProvider.alwaysRefresh(true);
+        startOffline();
+
+        $http.get('/test', {
+          offline: true,
+          cache: {
+            get: function (key) {
+              return this[key];
+            },
+            info: function () {
+              return {isExpired: false};
+            },
+            put: function (key, value) {
+              this[key] = value;
+            },
+            remove: function (key) {
+              expect(key).to.equal('/test');
+              done();
+            }
+          }
+        });
+
+        $httpBackend.flush(1);
+      });
+
     });
   });
 
