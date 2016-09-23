@@ -289,8 +289,9 @@ angular
         if (!config.cache)
           config.cache = true;
 
-        const cache = getCache(config.cache);
-        var cacheKey = cache.info(config.url).id;
+        var cache = getCache(config.cache);
+        var cacheInfo = cache.info();
+        var cacheKey = cacheInfo.id;
         if (cacheKey) {
           if (offlineProvider._excludeCacheIds.indexOf(cacheKey) !== -1) {
             // the cache is in the exclude list, so do nothing
