@@ -101,6 +101,13 @@ angular
       return $log.debug.apply($log, ['%cOffline', 'font-weight: bold'].concat([].slice.call(arguments)));
     }
 
+    /**
+     * Return cache/default cache
+     *
+     * @param {object} cache Cache
+     * @returns {object} Cache
+     */
+
     function getCache (cache) {
       if (cache === true)
         cache = $requester.defaults.cache || $cacheFactory.get('$http');
