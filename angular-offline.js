@@ -73,8 +73,8 @@ angular
    * @returns {offlineProvider}
    */
 
-  offlineProvider.includeCaches = function (cacheList) {
-    this._includeCaches = cacheList;
+  offlineProvider.excludeCacheIds = function (cacheList) {
+    this._excludeCacheIds = cacheList;
     return this;
   };
 
@@ -269,9 +269,18 @@ angular
     offline.interceptors = {
       request: function (config) {
 
-        // If there is not offline options, do nothing.
-        if (!config.offline && !offlineProvider._alwaysOffline) {
+        // If the request is explicitly marked as not offline, do nothing
+        if (config.offline === false) {
           return config;
+        }
+
+        if (config.offline !== true) {
+          // config is neither true or false, so we need to check if always offline is set
+          if (!offlineProvider._alwaysOffline) {
+            // neither config or always offline indicate we should offline this
+            //  request, so we do nothing
+            return config;
+          }
         }
 
         log('intercept request', config);
@@ -283,8 +292,8 @@ angular
         const cache = getCache(config.cache);
         var cacheKey = cache.info(config.url).id;
         if (cacheKey) {
-          if (!config.offline && offlineProvider._includeCaches.indexOf(cacheKey) === -1) {
-            // this was not an explicit offline request and the cache id isn't in the whitelist
+          if (offlineProvider._excludeCacheIds.indexOf(cacheKey) !== -1) {
+            // the cache is in the exclude list, so do nothing
             return config;
           }
         }
